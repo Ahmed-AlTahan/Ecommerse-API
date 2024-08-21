@@ -27,7 +27,6 @@ app.options('*', cors());
 // Compress all responses
 app.use(compression());
 
-
 // checkout webhook
 app.post('/webhook-checkout', express.raw({type: 'application/json'}), webhookCheckout);
 

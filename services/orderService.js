@@ -148,6 +148,7 @@ exports.checkoutSession = asyncHandler(async(req, res, next) => {
 });
 
 exports.webhookCheckout = asyncHandler(async(req, res, next) => {
+    console.log("1");
     const sig = req.headers['stripe-signature'];
 
     let event;
@@ -158,6 +159,7 @@ exports.webhookCheckout = asyncHandler(async(req, res, next) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
+    console.log("2");
     if(event.type === "checkout.session.completed"){
         console.log("Create Order Here....");
     }
