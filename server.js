@@ -11,6 +11,7 @@ const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
 
 const mountRoutes = require('./routes');
+const {webhookCheckout} = require('./services/orderService');
 
 
 // connect with db
@@ -25,6 +26,11 @@ app.options('*', cors());
 
 // Compress all responses
 app.use(compression());
+
+
+// checkout webhook
+app.post('/webhook-checkout', express.raw({type: 'application/json'}), webhookCheckout);
+
 
 // Middlewares
 app.use(express.json());
