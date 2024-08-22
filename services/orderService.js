@@ -155,6 +155,8 @@ exports.webhookCheckout = asyncHandler(async(req, res, next) => {
   
     try {
         console.log(process.env.STRIPE_WEBHOOK_SECRET);
+        console.log(sig);
+        console.log(req.body);
         event = stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     } catch (err) {
         console.log(err.message);
