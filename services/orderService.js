@@ -4,6 +4,7 @@ const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
+const User = require('../models/userModel');
 
 
 const factory = require('./handlersFactory');
@@ -147,6 +148,45 @@ exports.checkoutSession = asyncHandler(async(req, res, next) => {
     res.status(200).json({status: 'success', session});
 });
 
+
+exports.createCardOrder = async(session) => {
+    const cartId = session.client_reference_id;
+    const shippingAddress = session.metadata;
+    const orderPrice = session.amount_total / 100;
+
+    const cart = await Cart.findById(cartId);
+    const user = await User.findOne({email: session.customer_email});
+
+    // create order with payment cash
+    const order = await Order.create({
+        user: user._id,
+        cartItems: cart.cartItems,
+        shippingAddress,
+        totalOrderPrice: orderPrice,
+        isPaid: true,
+        paidAt: Date.now(),
+        paymentMethodType: 'card',
+    });
+
+    // increase product sold, decrease product quantity 
+    if(order){
+        const bulkOption = cart.cartItems.map((item) => ({
+            updateOne: {
+                filter: {_id: item.product},
+                update: {$inc: {quantity: -item.quantity, sold: +item.quantity}},
+            }
+        }));
+        await Product.bulkWrite(bulkOption, {});
+
+        // clear cart
+        await Cart.findByIdAndDelete(cartId);
+    }
+};
+
+
+// @desc    This webhook will run when stripe payment succeeds
+// @route   POST     /webhook-checkout
+// access   protected/user
 exports.webhookCheckout = asyncHandler(async(req, res, next) => {
     const sig = req.headers['stripe-signature'];
 
@@ -159,8 +199,11 @@ exports.webhookCheckout = asyncHandler(async(req, res, next) => {
     }
 
     if(event.type === "checkout.session.completed"){
-        console.log("Create Order Here....");
+        // Create order
+        createCardOrder(event.data.object);
     }
+
+    res.status(200).json({message: "Success"});
 });
 
 
