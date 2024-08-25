@@ -3,6 +3,9 @@ const morgan = require('morgan');
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
+const mongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
 
 dotenv.config({path:'config.env'});
@@ -32,13 +35,41 @@ app.post('/webhook-checkout', express.raw({type: 'application/json'}), webhookCh
 
 
 // Middlewares
-app.use(express.json());
+app.use(express.json({limit: '20kb'})); // limit variable is for controlling request body size
 app.use(express.static(path.join(__dirname, 'uploads')));
 
 if(process.env.NODE_ENV === 'development'){
     app.use(morgan('dev')); 
     console.log(`mode : ${process.env.NODE_ENV}`);
 }
+
+// middleware which sanitizes user-supplied data to prevent MongoDB Operator Injection.
+app.use(mongoSanitize());
+
+// Protecting application from brute forcing attack
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each IP to 10 requests per window 
+    message: "Too many requests, please try again after 15 minutes",
+});
+
+// Apply the rate limiting middleware to all requests
+app.use('/api', limiter);
+
+
+// middleware to protect against HTTP Parameter Pollution attacks
+app.use(
+    hpp({
+        whitelist: [
+            'price',
+            'sold',
+            'quantity',
+            'ratingsAverage',
+            'ratingsQuantity',
+        ]
+    })
+);
+
 
 // Mount Routes
 mountRoutes(app);
