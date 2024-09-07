@@ -30,6 +30,7 @@
     "sharp": "^0.33.4",
     "slugify": "^1.6.6",
     "stripe": "^16.7.0",
+    "tape": "^5.8.1",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
