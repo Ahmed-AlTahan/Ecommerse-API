@@ -34,6 +34,7 @@ app.use(compression());
 app.post('/webhook-checkout', express.raw({type: 'application/json'}), webhookCheckout);
 
 
+
 // Middlewares
 app.use(express.json({limit: '20kb'})); // limit variable is for controlling request body size
 app.use(express.static(path.join(__dirname, 'uploads')));
